@@ -1,4 +1,4 @@
-# 🤖 RepoGym-RL
+# RepoGym-RL
 
 [![Project Status: Active](https://img.shields.io/badge/Project%20Status-Active-brightgreen.svg)](https://github.com/heyaryansingh/RepoGym-RL)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
