@@ -9,6 +9,8 @@ from repogym.actions import ActionWrapper
 
 from repogym.tasks import TaskManager
 from repogym.sandbox.docker import DockerSandbox
+from repogym.grader.static import get_complexity_score, get_maintainability_score
+from repogym.grader.functional import calculate_test_reward, parse_pytest_output
 
 class RepoGymEnv(gym.Env):
     """
@@ -33,6 +35,10 @@ class RepoGymEnv(gym.Env):
         self.task_manager = TaskManager()
         self.current_task = None
         self.sandbox = DockerSandbox()
+        
+        # Reward-related state
+        self.prev_test_results = {}
+        self.last_static_scores = {} # path -> score
 
     def reset(self, seed=None, options=None):
         """
@@ -118,6 +124,26 @@ class RepoGymEnv(gym.Env):
                 exit_code = res["exit_code"] if isinstance(res, dict) else res.exit_code
                 self.transcript += f"\nOutput (exit {exit_code}):\n{output}"
                 info["exit_code"] = exit_code
+
+                # Functional rewards: Test deltas
+                if action_obj.command == "run_tests":
+                    current_results = parse_pytest_output(output)
+                    test_reward = calculate_test_reward(self.prev_test_results, current_results)
+                    reward += test_reward
+                    self.prev_test_results = current_results
+                    info["test_reward"] = test_reward
+
+                # Static rewards: Code quality of modified files
+                if action_obj.command == "write_file":
+                    c_score = get_complexity_score(action_obj.content)
+                    m_score = get_maintainability_score(action_obj.content)
+                    
+                    # Store delta or absolute? For now, relative to simple baseline
+                    # Let's reward higher maintainability and lower complexity
+                    quality_reward = (c_score + m_score) / 10.0 # Small nudge
+                    reward += quality_reward
+                    info["quality_reward"] = quality_reward
+                    self.last_static_scores[action_obj.path] = (c_score, m_score)
 
             info["action_valid"] = True
             info["action_type"] = action_obj.command
