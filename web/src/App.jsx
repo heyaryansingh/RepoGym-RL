@@ -1,313 +1,265 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Terminal, Shield, BarChart3, Cpu, Code2, PlayCircle, CheckCircle2, ChevronRight, X, AlertCircle } from 'lucide-react';
+import {
+  Terminal, Shield, BarChart3, Cpu, Code2, PlayCircle,
+  CheckCircle2, ChevronRight, X
+} from 'lucide-react';
+
+const demoData = [
+  {
+    title: "Task Initialization",
+    desc: "Loading 'bugfix-simple' task into RG-721a container.",
+    cmd: "repogym reset --task bugfix-simple",
+    output: "Environment Ready. Source code synced.",
+    metrics: { pass: 0, reward: 0.0 }
+  },
+  {
+    title: "Baseline Evaluation",
+    desc: "Running initial test suite to establish measurable baseline.",
+    cmd: "agent.step(action='run_tests')",
+    output: "test_strings.py::test_kebab_to_camel FAILED",
+    metrics: { pass: 0, reward: -1.0 }
+  },
+  {
+    title: "Automated Repair",
+    desc: "Agent applies code improvement via 'write_file'.",
+    cmd: "agent.step(action='write_file', content='...')",
+    output: "File saved. Static analysis: Complexity ↓, MI ↑",
+    metrics: { pass: 0, reward: -0.83 }
+  },
+  {
+    title: "Success Verification",
+    desc: "Final verification. Functional tests pass, completing episode.",
+    cmd: "agent.step(action='run_tests')",
+    output: "test_strings.py::test_kebab_to_camel PASSED",
+    metrics: { pass: 1, reward: 1.175 }
+  }
+];
 
 const App = () => {
   const [showDemo, setShowDemo] = useState(false);
   const [demoStep, setDemoStep] = useState(0);
 
-  const demoData = [
-    {
-      title: "Task Initialization",
-      desc: "Loading 'bugfix-simple' task intoRG-721a container.",
-      cmd: "repogym reset --task bugfix-simple",
-      output: "Environment Ready. Source code synced.",
-      metrics: { pass: 0, reward: 0.0 }
-    },
-    {
-      title: "Baseline Evaluation",
-      desc: "Running initial test suite to establish measurable baseline.",
-      cmd: "agent.step(action='run_tests')",
-      output: "test_strings.py::test_kebab_to_camel FAILED",
-      metrics: { pass: 0, reward: -1.0 }
-    },
-    {
-      title: "Automated Repair",
-      desc: "Agent applies code improvement via 'write_file'.",
-      cmd: "agent.step(action='write_file', content='...')",
-      output: "File saved. Static analysis: Complexity ↓, MI ↑",
-      metrics: { pass: 0, reward: -0.83 }
-    },
-    {
-      title: "Success Verification",
-      desc: "Final verification. Functional tests pass, completing episode.",
-      cmd: "agent.step(action='run_tests')",
-      output: "test_strings.py::test_kebab_to_camel PASSED",
-      metrics: { pass: 1, reward: 1.175 }
-    }
-  ];
   return (
-    <div className="bg-black text-white min-h-screen">
+    <div className="app-root">
       {/* Hero Section */}
-      <section className="relative flex flex-col items-center justify-center text-center overflow-hidden">
-        <div className="absolute top-[-10%] left-[-10%] w-[40%] h-[40%] bg-purple-900/20 blur-[120px] rounded-full" />
-        <div className="absolute bottom-[-10%] right-[-10%] w-[40%] h-[40%] bg-cyan-900/20 blur-[120px] rounded-full" />
+      <section className="hero">
+        <div className="glow" style={{ top: '-10%', left: '-10%', background: 'var(--primary)' }} />
+        <div className="glow" style={{ bottom: '-10%', right: '-10%', background: 'var(--secondary)' }} />
 
         <motion.div
-          initial={{ opacity: 0, y: 20 }}
+          className="container flex flex-col items-center text-center"
+          initial={{ opacity: 0, y: 30 }}
           animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.8 }}
         >
           <h1 className="gradient-text">RepoGym<span className="accent-text">-RL</span></h1>
-          <p className="max-w-2xl mx-auto mb-8 text-xl">
+          <p className="text-dim" style={{ maxWidth: '700px', margin: '24px 0 40px', fontSize: '1.25rem' }}>
             A high-fidelity, containerized reinforcement learning environment for local-first software engineering agent evaluation.
           </p>
-          <div className="flex gap-4 justify-center">
-            <button
-              className="btn-primary flex items-center gap-2"
-              onClick={() => setShowDemo(true)}
-            >
+          <div className="flex gap-md">
+            <button className="btn btn-primary" onClick={() => setShowDemo(true)}>
               <PlayCircle size={20} /> Deploy Demo
             </button>
-            <button className="glass px-6 py-3 rounded-lg flex items-center gap-2 border-white/10 hover:bg-white/5 transition-all">
-              <Code2 size={20} /> View Docs
+            <button className="btn btn-outline">
+              <Code2 size={20} /> View Source
             </button>
           </div>
-        </motion.div>
 
-        {/* Console Demo Mockup */}
-        <motion.div
-          className="mt-20 glass w-full max-w-4xl p-6 text-left font-mono text-sm border-white/5 relative group"
-          initial={{ opacity: 0, scale: 0.95 }}
-          animate={{ opacity: 1, scale: 1 }}
-          transition={{ delay: 0.4 }}
-        >
-          <div className="flex gap-2 mb-4 border-b border-white/5 pb-2">
-            <div className="w-3 h-3 rounded-full bg-red-500/50" />
-            <div className="w-3 h-3 rounded-full bg-yellow-500/50" />
-            <div className="w-3 h-3 rounded-full bg-green-500/50" />
-            <span className="ml-4 text-xs text-white/40">repogym shell --task bugfix-simple</span>
+          <div className="console-mock glass">
+            <div className="console-dots">
+              <div className="dot" style={{ background: '#ff5f56' }} />
+              <div className="dot" style={{ background: '#ffbd2e' }} />
+              <div className="dot" style={{ background: '#27c93f' }} />
+            </div>
+            <div className="font-mono" style={{ fontSize: '0.9rem' }}>
+              <p style={{ color: 'var(--secondary)' }}>$ repogym reset --task bugfix-simple</p>
+              <p className="text-muted">Environment initialized. Container [rg-721a] running.</p>
+              <p style={{ color: 'var(--primary)', marginTop: '8px' }}>$ agent.step(command="run_tests")</p>
+              <p style={{ color: 'var(--accent)' }}>Result: 1 failed, 0 passed (Functional Reward: -1.0)</p>
+            </div>
           </div>
-          <div className="space-y-2">
-            <p className="text-cyan-400">$ repogym reset --task bugfix-simple</p>
-            <p className="text-white/60">Environment initialized. Container [rg-721a] running.</p>
-            <p className="text-purple-400">$ agent.step(command="run_tests")</p>
-            <p className="text-rose-400">Result: 1 failed, 0 passed (Functional Reward: -1.0)</p>
-            <p className="text-green-400">_</p>
-          </div>
-          <div className="absolute -inset-0.5 bg-gradient-to-r from-purple-500 to-cyan-500 rounded-2xl opacity-0 group-hover:opacity-10 transition-opacity pointer-events-none" />
         </motion.div>
       </section>
 
-      {/* Features Grid */}
-      <section className="py-20">
-        <h2 className="text-center mb-16">The Core Stack</h2>
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
+      {/* Features Section */}
+      <section className="container">
+        <h2 className="text-center" style={{ marginBottom: '60px' }}>The Core Stack</h2>
+        <div className="grid grid-cols-3 gap-lg">
           <FeatureCard
-            icon={<Shield className="text-cyan-400" />}
+            icon={<Shield color="var(--secondary)" />}
             title="Ironclad Isolation"
             desc="Every episode runs in a fresh Docker sandbox. No side effects, absolute reproducibility."
           />
           <FeatureCard
-            icon={<Cpu className="text-purple-400" />}
+            icon={<Cpu color="var(--primary)" />}
             title="Rich Action Space"
             desc="Structured Pydantic tool calls for listing files, writing code, and execution."
           />
           <FeatureCard
-            icon={<BarChart3 className="text-rose-400" />}
+            icon={<BarChart3 color="var(--accent)" />}
             title="Scientific Rewards"
             desc="Functional test deltas combined with Radon-based static analysis nudges."
           />
         </div>
       </section>
 
-      {/* Demo Modal Overlay */}
+      {/* Process Section */}
+      <section className="container" style={{ margin: '100px auto' }}>
+        <div className="card grid grid-cols-2 gap-3xl items-center">
+          <div>
+            <h2 style={{ marginBottom: '24px' }}>Measure What Matters</h2>
+            <p className="text-dim" style={{ marginBottom: '32px' }}>
+              RepoGym-RL isn't just a wrapper. It's a precise instrument for measuring agent performance.
+              We track complexity, maintainability, and functional pass-rates in real-time.
+            </p>
+            <div className="flex flex-col gap-md">
+              <div className="flex items-center gap-sm">
+                <CheckCircle2 color="#27c93f" size={20} /> <span>Radon Static Analysis</span>
+              </div>
+              <div className="flex items-center gap-sm">
+                <CheckCircle2 color="#27c93f" size={20} /> <span>Pytest Delta Tracking</span>
+              </div>
+              <div className="flex items-center gap-sm">
+                <CheckCircle2 color="#27c93f" size={20} /> <span>JSONL Telemetry</span>
+              </div>
+            </div>
+          </div>
+          <div className="glass flex flex-col justify-center" style={{ height: '300px', padding: '40px' }}>
+            <div className="flex gap-sm items-end" style={{ height: '100%' }}>
+              {[0.4, 0.6, 0.5, 0.8, 0.7, 0.9, 0.85, 1].map((h, i) => (
+                <div
+                  key={i}
+                  className={`reward-bar ${i === 7 ? 'active animate-pulse' : ''}`}
+                  style={{ height: `${h * 100}%` }}
+                />
+              ))}
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <footer className="container text-center text-muted" style={{ padding: '60px 0', borderTop: '1px solid var(--glass-border)' }}>
+        RepoGym-RL &copy; 2026 • Advanced Agentic Evaluation
+      </footer>
+
+      {/* Interactive Demo Modal */}
       <AnimatePresence>
         {showDemo && (
           <motion.div
+            className="modal-overlay"
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
-            className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-xl"
           >
             <motion.div
+              className="modal-content"
               initial={{ scale: 0.9, y: 20 }}
               animate={{ scale: 1, y: 0 }}
-              className="glass max-w-5xl w-full max-h-[90vh] overflow-hidden flex flex-col border-white/10 shadow-2xl"
             >
-              {/* Modal Header */}
-              <div className="p-6 border-b border-white/5 flex justify-between items-center bg-white/5">
-                <div className="flex items-center gap-4">
-                  <div className="p-2 bg-purple-500/20 rounded-lg text-purple-400">
-                    <Terminal size={24} />
-                  </div>
-                  <div>
-                    <h3 className="text-xl font-bold">Interactive Demo: <span className="text-purple-400">bugfix-simple</span></h3>
-                    <p className="text-sm text-white/40">Real-time Environment Interaction</p>
-                  </div>
+              <div className="modal-header">
+                <div>
+                  <h3>Interactive Demo: <span className="accent-text">bugfix-simple</span></h3>
+                  <p className="text-muted" style={{ fontSize: '0.8rem' }}>Step {demoStep + 1} of 4</p>
                 </div>
-                <button
-                  onClick={() => { setShowDemo(false); setDemoStep(0); }}
-                  className="p-2 hover:bg-white/5 rounded-full transition-colors"
-                >
-                  <X size={24} />
+                <button className="btn btn-outline" style={{ padding: '8px' }} onClick={() => setShowDemo(false)}>
+                  <X size={20} />
                 </button>
               </div>
 
-              {/* Modal Content */}
-              <div className="flex-1 overflow-auto grid grid-cols-1 lg:grid-cols-2">
-                {/* Left: Interactive Visualizer */}
-                <div className="p-8 border-r border-white/5 space-y-8">
-                  <div className="space-y-4">
-                    <h4 className="text-sm uppercase tracking-wider text-white/40">Step {demoStep + 1} of 4</h4>
-                    <h3 className="text-2xl font-bold">{demoData[demoStep].title}</h3>
-                    <p className="text-white/60 leading-relaxed">{demoData[demoStep].desc}</p>
+              <div className="modal-body">
+                <div className="modal-side flex flex-col gap-lg">
+                  <div>
+                    <h3 style={{ marginBottom: '12px' }}>{demoData[demoStep].title}</h3>
+                    <p className="text-dim">{demoData[demoStep].desc}</p>
                   </div>
 
-                  {/* Visual Reward Chart Placeholder */}
-                  <div className="glass p-6 border-white/5 bg-black/40 h-48 flex flex-col justify-end gap-3 relative overflow-hidden">
-                    <div className="absolute top-4 right-4 flex items-center gap-2 text-xs text-white/40 uppercase tracking-widest">
-                      <BarChart3 size={12} /> Live Reward
-                    </div>
-                    <div className="flex items-end gap-2 h-full">
-                      {[0.4, 0.6, 0.5, 0.8, 0.7, 0.9, 0.85, 1].map((h, i) => (
-                        <motion.div
-                          key={i}
-                          initial={{ height: 0 }}
-                          animate={{ height: `${h * 100}%` }}
-                          className={`flex-1 rounded-t-sm ${i === 7 ? 'bg-purple-500 shadow-[0_-4px_20px_rgba(168,85,247,0.4)]' : 'bg-white/10'}`}
-                        />
+                  <div className="glass flex flex-col justify-center" style={{ height: '160px', padding: '24px' }}>
+                    <div className="flex gap-xs items-end" style={{ height: '100%' }}>
+                      {[0.3, 0.5, 0.4, 0.7, 0.6, 0.8, demoStep * 0.3].map((h, i) => (
+                        <div key={i} className="reward-bar active" style={{ height: `${h * 100}%`, opacity: 0.3 + (i * 0.1) }} />
                       ))}
                     </div>
-                    <div className="pt-2 border-t border-white/10 flex justify-between items-center text-xs">
-                      <span className="text-white/40">Cyclomatic Baseline</span>
-                      <span className="font-mono text-purple-400">+{demoData[demoStep].metrics.reward.toFixed(3)} pts</span>
-                    </div>
                   </div>
 
-                  <div className="grid grid-cols-2 gap-4">
-                    <div className="glass p-4 border-white/5 bg-white/2">
-                      <p className="text-xs text-white/40 mb-1">Functional Pass</p>
-                      <p className="text-2xl font-mono text-cyan-400">{demoData[demoStep].metrics.pass}/1</p>
+                  <div className="grid grid-cols-2 gap-md">
+                    <div className="glass" style={{ padding: '16px' }}>
+                      <p className="text-muted" style={{ fontSize: '0.7rem', marginBottom: '4px' }}>Tests Passed</p>
+                      <p className="font-mono" style={{ fontSize: '1.5rem', color: 'var(--secondary)' }}>{demoData[demoStep].metrics.pass}/1</p>
                     </div>
-                    <div className="glass p-4 border-white/5 bg-white/2 text-right">
-                      <p className="text-xs text-white/40 mb-1">Current Reward</p>
-                      <p className={`text-2xl font-mono ${demoData[demoStep].metrics.reward >= 0 ? 'text-green-500' : 'text-rose-500'}`}>
-                        {demoData[demoStep].metrics.reward.toFixed(1)}
+                    <div className="glass" style={{ padding: '16px', textAlign: 'right' }}>
+                      <p className="text-muted" style={{ fontSize: '0.7rem', marginBottom: '4px' }}>Reward Signal</p>
+                      <p className="font-mono" style={{ fontSize: '1.5rem', color: demoData[demoStep].metrics.reward >= 0 ? '#27c93f' : 'var(--accent)' }}>
+                        {demoData[demoStep].metrics.reward.toFixed(2)}
                       </p>
                     </div>
                   </div>
                 </div>
 
-                {/* Right: Code/Console View */}
-                <div className="bg-[#0a0a0a] p-8 flex flex-col gap-6">
-                  <div className="space-y-4">
-                    <p className="text-xs text-white/40 flex items-center gap-2"><Cpu size={14} /> Sandbox Context</p>
-                    <div className="glass p-4 border-white/5 bg-black/60 font-mono text-sm space-y-2">
-                      <p className="text-cyan-400">$ {demoData[demoStep].cmd}</p>
-                      <p className={`text-sm ${demoStep === 1 ? 'text-rose-400' : 'text-green-400/80'}`}>
-                        {demoData[demoStep].output}
-                      </p>
+                <div className="modal-main flex flex-col gap-lg">
+                  <div className="flex flex-col gap-sm">
+                    <p className="text-muted flex items-center gap-sm" style={{ fontSize: '0.75rem' }}><Terminal size={14} /> Console</p>
+                    <div className="glass font-mono" style={{ padding: '16px', fontSize: '0.8rem', background: '#050505' }}>
+                      <p style={{ color: 'var(--secondary)' }}>$ {demoData[demoStep].cmd}</p>
+                      <p style={{ color: demoStep === 1 ? 'var(--accent)' : '#27c93f', marginTop: '4px' }}>{demoData[demoStep].output}</p>
                     </div>
                   </div>
 
-                  <div className="flex-1 space-y-4">
-                    <p className="text-xs text-white/40 flex items-center gap-2"><Code2 size={14} /> File: string_utils.py</p>
-                    <div className="glass p-4 border-white/5 bg-black/60 h-full font-mono text-xs text-white/40 leading-relaxed overflow-hidden">
+                  <div className="flex flex-col gap-sm" style={{ flex: 1 }}>
+                    <p className="text-muted flex items-center gap-sm" style={{ fontSize: '0.75rem' }}><Code2 size={14} /> string_utils.py</p>
+                    <div className="glass font-mono" style={{ padding: '20px', fontSize: '0.75rem', background: '#050505', flex: 1 }}>
                       {demoStep < 2 ? (
-                        <pre>
+                        <div style={{ color: 'rgba(255,255,255,0.4)' }}>
                           def kebab_to_camel(text):<br />
                           &nbsp;&nbsp;if not text: return ""<br />
                           &nbsp;&nbsp;parts = text.split("-")<br />
-                          &nbsp;&nbsp;<span className="bg-rose-500/20 text-rose-300"># BUG: Incorrect join</span><br />
+                          &nbsp;&nbsp;<span style={{ color: 'var(--accent)', background: 'rgba(244,63,94,0.1)', padding: '0 4px' }}># BUG: Incorrect join logic</span><br />
                           &nbsp;&nbsp;return "".join(p.capitalize() for p in parts)
-                        </pre>
+                        </div>
                       ) : (
-                        <pre>
+                        <div style={{ color: 'rgba(255,255,255,0.4)' }}>
                           def kebab_to_camel(text):<br />
                           &nbsp;&nbsp;if not text: return ""<br />
                           &nbsp;&nbsp;parts = text.split("-")<br />
-                          &nbsp;&nbsp;<span className="bg-green-500/20 text-green-300"># FIXED: Slicing properly</span><br />
+                          &nbsp;&nbsp;<span style={{ color: '#27c93f', background: 'rgba(39,201,63,0.1)', padding: '0 4px' }}># FIXED: Slice first element</span><br />
                           &nbsp;&nbsp;return parts[0] + "".join(p.capitalize() for p in parts[1:])
-                        </pre>
+                        </div>
                       )}
                     </div>
                   </div>
                 </div>
               </div>
 
-              {/* Modal Footer */}
-              <div className="p-6 border-t border-white/5 flex justify-between items-center bg-white/2">
-                <div className="flex gap-2">
-                  {demoData.map((_, i) => (
-                    <div key={i} className={`w-8 h-1 rounded-full ${i <= demoStep ? 'bg-purple-500' : 'bg-white/10'}`} />
+              <div className="modal-footer">
+                <div className="flex gap-sm">
+                  {[0, 1, 2, 3].map(i => (
+                    <div key={i} style={{ width: '40px', height: '3px', background: i <= demoStep ? 'var(--primary)' : 'rgba(255,255,255,0.1)', borderRadius: '2px' }} />
                   ))}
                 </div>
-                <div className="flex gap-3">
-                  {demoStep > 0 && (
-                    <button
-                      onClick={() => setDemoStep(prev => prev - 1)}
-                      className="px-4 py-2 text-sm text-white/60 hover:text-white transition-colors"
-                    >
-                      Back
-                    </button>
-                  )}
-                  {demoStep < demoData.length - 1 ? (
-                    <button
-                      onClick={() => setDemoStep(prev => prev + 1)}
-                      className="btn-primary flex items-center gap-2 py-2"
-                    >
-                      Next Step <ChevronRight size={16} />
-                    </button>
-                  ) : (
-                    <button
-                      onClick={() => { setShowDemo(false); setDemoStep(0); }}
-                      className="btn-primary py-2 px-8"
-                    >
-                      Finish Walkthrough
-                    </button>
-                  )}
+                <div className="flex gap-md">
+                  {demoStep > 0 && <button className="btn btn-outline" onClick={() => setDemoStep(s => s - 1)}>Back</button>}
+                  <button
+                    className="btn btn-primary"
+                    onClick={() => demoStep < 3 ? setDemoStep(s => s + 1) : setShowDemo(false)}
+                  >
+                    {demoStep < 3 ? 'Next Step' : 'Close Demo'} <ChevronRight size={16} />
+                  </button>
                 </div>
               </div>
             </motion.div>
           </motion.div>
         )}
       </AnimatePresence>
-
-      {/* Engineering Process */}
-      <section className="bg-surface-color/50 rounded-[40px] py-16 px-8 mb-20">
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-16 items-center">
-          <div>
-            <h2 className="mb-6">Measure What Matters</h2>
-            <p className="mb-8">
-              RepoGym-RL isn't just a wrapper. It's a precise instrument for measuring agent performance.
-              We track cyclomatic complexity, maintainability indexes, and test pass-rates in real-time.
-            </p>
-            <ul className="space-y-4">
-              <li className="flex items-center gap-3"><CheckCircle2 className="text-green-500" size={18} /> Radon-based Static Analysis</li>
-              <li className="flex items-center gap-3"><CheckCircle2 className="text-green-500" size={18} /> Pytest Delta Tracking</li>
-              <li className="flex items-center gap-3"><CheckCircle2 className="text-green-500" size={18} /> JSONL Trajectory Telemetry</li>
-            </ul>
-          </div>
-          <div className="glass p-8 border-white/5 aspect-video flex flex-col justify-center">
-            <div className="h-2 w-3/4 bg-white/10 rounded mb-4" />
-            <div className="h-2 w-1/2 bg-white/5 rounded mb-8" />
-            <div className="flex justify-between items-end gap-2">
-              <div className="w-1/6 bg-cyan-500/50 rounded-t h-20" />
-              <div className="w-1/6 bg-purple-500/50 rounded-t h-32" />
-              <div className="w-1/6 bg-cyan-500/50 rounded-t h-24" />
-              <div className="w-1/6 bg-purple-500/80 rounded-t h-48 animate-pulse" />
-              <div className="w-1/6 bg-rose-500/40 rounded-t h-16" />
-              <div className="w-1/6 bg-cyan-500/60 rounded-t h-28" />
-            </div>
-            <p className="text-xs text-center mt-4 text-white/30">Live Reward Signal Breakdown</p>
-          </div>
-        </div>
-      </section>
-
-      {/* Footer */}
-      <footer className="border-t border-white/5 py-12 text-center text-sm text-white/20">
-        RepoGym-RL &copy; 2025 • Designed for Advanced Agentic Evaluation
-      </footer>
     </div>
   );
 };
 
 const FeatureCard = ({ icon, title, desc }) => (
-  <div className="glass p-8 border-white/5 hover:border-white/10 transition-all hover:translate-y-[-4px]">
-    <div className="mb-4 inline-block p-3 rounded-xl bg-white/5">{icon}</div>
-    <h3 className="text-xl font-bold mb-2">{title}</h3>
-    <p className="text-sm">{desc}</p>
+  <div className="card">
+    <div style={{ marginBottom: '20px', display: 'inline-flex', padding: '12px', background: 'rgba(255,255,255,0.03)', borderRadius: '12px' }}>
+      {icon}
+    </div>
+    <h3 style={{ marginBottom: '12px' }}>{title}</h3>
+    <p className="text-dim" style={{ fontSize: '0.9rem' }}>{desc}</p>
   </div>
 );
 
