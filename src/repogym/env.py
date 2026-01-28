@@ -11,6 +11,7 @@ from repogym.tasks import TaskManager
 from repogym.sandbox.docker import DockerSandbox
 from repogym.grader.static import get_complexity_score, get_maintainability_score
 from repogym.grader.functional import calculate_test_reward, parse_pytest_output
+from repogym.telemetry import EpisodeLogger
 
 class RepoGymEnv(gym.Env):
     """
@@ -31,6 +32,7 @@ class RepoGymEnv(gym.Env):
         self.action_space = spaces.Text(min_length=0, max_length=10000)
         
         self.render_mode = render_mode
+        self.log_dir = "logs"
         self.transcript = "Repository initialized. Ready for agent actions."
         self.task_manager = TaskManager()
         self.current_task = None
@@ -39,6 +41,10 @@ class RepoGymEnv(gym.Env):
         # Reward-related state
         self.prev_test_results = {}
         self.last_static_scores = {} # path -> score
+        
+        # Telemetry state
+        self.logger = None
+        self.step_count = 0
 
     def reset(self, seed=None, options=None):
         """
@@ -47,18 +53,24 @@ class RepoGymEnv(gym.Env):
         super().reset(seed=seed)
         
         self.transcript = "Environment reset."
+        self.step_count = 0
         
         # Cleanup existing sandbox
         if self.sandbox.container:
             self.sandbox.remove()
         
         # Select task if provided in options
-        if options and "task_id" in options:
+        task_id = options.get("task_id") if options else None
+        if task_id:
             try:
-                self.current_task = self.task_manager.get_task(options["task_id"])
+                self.current_task = self.task_manager.get_task(task_id)
                 self.transcript += f" Loaded task: {self.current_task.name}"
             except KeyError as e:
                 self.transcript += f"\n> Warning: Failed to load task. {str(e)}"
+        
+        # Initialize telemetry
+        episode_id = f"ep_{int(time.time())}"
+        self.logger = EpisodeLogger(episode_id=episode_id, task_id=task_id)
         
         # Orchestrate sandbox
         self.sandbox.create_container()
@@ -85,6 +97,7 @@ class RepoGymEnv(gym.Env):
         """
         Executes one timestep within the environment.
         """
+        self.step_count += 1
         reward = 0.0
         terminated = False
         truncated = False
@@ -105,7 +118,6 @@ class RepoGymEnv(gym.Env):
                 res = self.sandbox.execute(f"cat {action_obj.path}")
             elif action_obj.command == "write_file":
                 # Create a temporary file locally to copy it to the sandbox
-                # This is a bit hacky but works with our current copy_to implementation
                 temp_filename = f"temp_{int(time.time())}.txt"
                 with open(temp_filename, "w") as f:
                     f.write(action_obj.content)
@@ -114,7 +126,7 @@ class RepoGymEnv(gym.Env):
                 res = {"exit_code": 0, "output": f"File {action_obj.path} written successfully."}
             elif action_obj.command == "run_tests":
                 test_path = action_obj.path if action_obj.path else "."
-                cmd = f"pytest {test_path}" # Simple default, could come from TaskPack
+                cmd = f"pytest {test_path}"
                 res = self.sandbox.execute(cmd)
             elif action_obj.command == "run_command":
                 res = self.sandbox.execute(action_obj.cmd)
@@ -137,10 +149,7 @@ class RepoGymEnv(gym.Env):
                 if action_obj.command == "write_file":
                     c_score = get_complexity_score(action_obj.content)
                     m_score = get_maintainability_score(action_obj.content)
-                    
-                    # Store delta or absolute? For now, relative to simple baseline
-                    # Let's reward higher maintainability and lower complexity
-                    quality_reward = (c_score + m_score) / 10.0 # Small nudge
+                    quality_reward = (c_score + m_score) / 10.0
                     reward += quality_reward
                     info["quality_reward"] = quality_reward
                     self.last_static_scores[action_obj.path] = (c_score, m_score)
@@ -162,6 +171,17 @@ class RepoGymEnv(gym.Env):
         observation = self._get_obs()
         info.update(self._get_info())
         
+        # Log step
+        if self.logger:
+            obs_sum = observation["transcript"][-200:] # Last 200 chars for summary
+            self.logger.log_step(
+                step=self.step_count,
+                action=action,
+                reward=reward,
+                info=info,
+                observation_summary=obs_sum
+            )
+        
         return observation, reward, terminated, truncated, info
 
     def render(self):
@@ -175,6 +195,10 @@ class RepoGymEnv(gym.Env):
         """
         Closes the environment and releases resources.
         """
+        if self.logger and self.log_dir:
+            log_file = os.path.join(self.log_dir, f"{self.logger.episode_id}.jsonl")
+            self.logger.write_jsonl(log_file)
+            
         if self.sandbox:
             self.sandbox.remove()
 
