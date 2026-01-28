@@ -1,6 +1,9 @@
 import gymnasium as gym
 from gymnasium import spaces
 import numpy as np
+import json
+from pydantic import ValidationError
+from repogym.actions import ActionWrapper
 
 class RepoGymEnv(gym.Env):
     """
@@ -11,18 +14,17 @@ class RepoGymEnv(gym.Env):
     def __init__(self, render_mode=None):
         super(RepoGymEnv, self).__init__()
         
-        # Placeholder spaces: will be refined in Phase 3 (Action Space) and Phase 5 (Lifecycle)
-        # Observation space will eventually include file contents, test results, etc.
+        # Placeholder spaces: will be refined in Phase 5 (Lifecycle)
         self.observation_space = spaces.Dict({
-            "transcript": spaces.Text(min_length=0, max_length=10000),
+            "transcript": spaces.Text(min_length=0, max_length=100000), # Increased limit
             "working_directory": spaces.Text(min_length=0, max_length=1000),
         })
         
-        # Action space: Placeholder discrete action space.
-        # Phase 3 will implement a structured action space (tool-calls).
-        self.action_space = spaces.Discrete(10)
+        # Action space: JSON string tool calls
+        self.action_space = spaces.Text(min_length=0, max_length=10000)
         
         self.render_mode = render_mode
+        self.transcript = "Repository initialized. Ready for agent actions."
 
     def reset(self, seed=None, options=None):
         """
@@ -30,7 +32,7 @@ class RepoGymEnv(gym.Env):
         """
         super().reset(seed=seed)
         
-        # Placeholder initial state
+        self.transcript = "Environment reset."
         observation = self._get_obs()
         info = self._get_info()
         
@@ -39,17 +41,30 @@ class RepoGymEnv(gym.Env):
             
         return observation, info
 
-    def step(self, action):
+    def step(self, action: str):
         """
         Executes one timestep within the environment.
         """
-        # Placeholder step logic: No-op for now
         reward = 0.0
         terminated = False
         truncated = False
+        info = {}
+
+        try:
+            # Dispatch action
+            action_data = self._dispatch_action(action)
+            # Update transcript with action call (Phase 5 will add actual execution results)
+            self.transcript += f"\n> Executing: {action_data.action.command}"
+            info["action_valid"] = True
+            info["action_type"] = action_data.action.command
+        except (ValidationError, json.JSONDecodeError) as e:
+            self.transcript += f"\n> Error: Invalid action format. {str(e)}"
+            reward = -1.0 # Penalty for invalid action format
+            info["action_valid"] = False
+            info["error"] = str(e)
         
         observation = self._get_obs()
-        info = self._get_info()
+        info.update(self._get_info())
         
         return observation, reward, terminated, truncated, info
 
@@ -58,7 +73,7 @@ class RepoGymEnv(gym.Env):
         Renders the environment state.
         """
         if self.render_mode == "human":
-            print("RepoGym Environment: Active")
+            print(f"--- Transcript ---\n{self.transcript}\n-------------------")
 
     def close(self):
         """
@@ -66,12 +81,19 @@ class RepoGymEnv(gym.Env):
         """
         pass
 
+    def _dispatch_action(self, action_str: str) -> ActionWrapper:
+        """
+        Parses and validates the action JSON string.
+        """
+        # Pydantic handles the union via ActionWrapper
+        return ActionWrapper.model_validate_json(action_str)
+
     def _get_obs(self):
         """
         Generates the current observation.
         """
         return {
-            "transcript": "Repository initialized. Ready for agent actions.",
+            "transcript": self.transcript,
             "working_directory": "/workspace"
         }
 
