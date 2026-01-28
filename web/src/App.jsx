@@ -1,8 +1,41 @@
-import React from 'react';
-import { motion } from 'framer-motion';
-import { Terminal, Shield, BarChart3, Cpu, Code2, PlayCircle, CheckCircle2 } from 'lucide-react';
+import React, { useState, useEffect } from 'react';
+import { motion, AnimatePresence } from 'framer-motion';
+import { Terminal, Shield, BarChart3, Cpu, Code2, PlayCircle, CheckCircle2, ChevronRight, X, AlertCircle } from 'lucide-react';
 
 const App = () => {
+  const [showDemo, setShowDemo] = useState(false);
+  const [demoStep, setDemoStep] = useState(0);
+
+  const demoData = [
+    {
+      title: "Task Initialization",
+      desc: "Loading 'bugfix-simple' task intoRG-721a container.",
+      cmd: "repogym reset --task bugfix-simple",
+      output: "Environment Ready. Source code synced.",
+      metrics: { pass: 0, reward: 0.0 }
+    },
+    {
+      title: "Baseline Evaluation",
+      desc: "Running initial test suite to establish measurable baseline.",
+      cmd: "agent.step(action='run_tests')",
+      output: "test_strings.py::test_kebab_to_camel FAILED",
+      metrics: { pass: 0, reward: -1.0 }
+    },
+    {
+      title: "Automated Repair",
+      desc: "Agent applies code improvement via 'write_file'.",
+      cmd: "agent.step(action='write_file', content='...')",
+      output: "File saved. Static analysis: Complexity ↓, MI ↑",
+      metrics: { pass: 0, reward: -0.83 }
+    },
+    {
+      title: "Success Verification",
+      desc: "Final verification. Functional tests pass, completing episode.",
+      cmd: "agent.step(action='run_tests')",
+      output: "test_strings.py::test_kebab_to_camel PASSED",
+      metrics: { pass: 1, reward: 1.175 }
+    }
+  ];
   return (
     <div className="bg-black text-white min-h-screen">
       {/* Hero Section */}
@@ -20,7 +53,10 @@ const App = () => {
             A high-fidelity, containerized reinforcement learning environment for local-first software engineering agent evaluation.
           </p>
           <div className="flex gap-4 justify-center">
-            <button className="btn-primary flex items-center gap-2">
+            <button
+              className="btn-primary flex items-center gap-2"
+              onClick={() => setShowDemo(true)}
+            >
               <PlayCircle size={20} /> Deploy Demo
             </button>
             <button className="glass px-6 py-3 rounded-lg flex items-center gap-2 border-white/10 hover:bg-white/5 transition-all">
@@ -74,6 +110,159 @@ const App = () => {
           />
         </div>
       </section>
+
+      {/* Demo Modal Overlay */}
+      <AnimatePresence>
+        {showDemo && (
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-xl"
+          >
+            <motion.div
+              initial={{ scale: 0.9, y: 20 }}
+              animate={{ scale: 1, y: 0 }}
+              className="glass max-w-5xl w-full max-h-[90vh] overflow-hidden flex flex-col border-white/10 shadow-2xl"
+            >
+              {/* Modal Header */}
+              <div className="p-6 border-b border-white/5 flex justify-between items-center bg-white/5">
+                <div className="flex items-center gap-4">
+                  <div className="p-2 bg-purple-500/20 rounded-lg text-purple-400">
+                    <Terminal size={24} />
+                  </div>
+                  <div>
+                    <h3 className="text-xl font-bold">Interactive Demo: <span className="text-purple-400">bugfix-simple</span></h3>
+                    <p className="text-sm text-white/40">Real-time Environment Interaction</p>
+                  </div>
+                </div>
+                <button
+                  onClick={() => { setShowDemo(false); setDemoStep(0); }}
+                  className="p-2 hover:bg-white/5 rounded-full transition-colors"
+                >
+                  <X size={24} />
+                </button>
+              </div>
+
+              {/* Modal Content */}
+              <div className="flex-1 overflow-auto grid grid-cols-1 lg:grid-cols-2">
+                {/* Left: Interactive Visualizer */}
+                <div className="p-8 border-r border-white/5 space-y-8">
+                  <div className="space-y-4">
+                    <h4 className="text-sm uppercase tracking-wider text-white/40">Step {demoStep + 1} of 4</h4>
+                    <h3 className="text-2xl font-bold">{demoData[demoStep].title}</h3>
+                    <p className="text-white/60 leading-relaxed">{demoData[demoStep].desc}</p>
+                  </div>
+
+                  {/* Visual Reward Chart Placeholder */}
+                  <div className="glass p-6 border-white/5 bg-black/40 h-48 flex flex-col justify-end gap-3 relative overflow-hidden">
+                    <div className="absolute top-4 right-4 flex items-center gap-2 text-xs text-white/40 uppercase tracking-widest">
+                      <BarChart3 size={12} /> Live Reward
+                    </div>
+                    <div className="flex items-end gap-2 h-full">
+                      {[0.4, 0.6, 0.5, 0.8, 0.7, 0.9, 0.85, 1].map((h, i) => (
+                        <motion.div
+                          key={i}
+                          initial={{ height: 0 }}
+                          animate={{ height: `${h * 100}%` }}
+                          className={`flex-1 rounded-t-sm ${i === 7 ? 'bg-purple-500 shadow-[0_-4px_20px_rgba(168,85,247,0.4)]' : 'bg-white/10'}`}
+                        />
+                      ))}
+                    </div>
+                    <div className="pt-2 border-t border-white/10 flex justify-between items-center text-xs">
+                      <span className="text-white/40">Cyclomatic Baseline</span>
+                      <span className="font-mono text-purple-400">+{demoData[demoStep].metrics.reward.toFixed(3)} pts</span>
+                    </div>
+                  </div>
+
+                  <div className="grid grid-cols-2 gap-4">
+                    <div className="glass p-4 border-white/5 bg-white/2">
+                      <p className="text-xs text-white/40 mb-1">Functional Pass</p>
+                      <p className="text-2xl font-mono text-cyan-400">{demoData[demoStep].metrics.pass}/1</p>
+                    </div>
+                    <div className="glass p-4 border-white/5 bg-white/2 text-right">
+                      <p className="text-xs text-white/40 mb-1">Current Reward</p>
+                      <p className={`text-2xl font-mono ${demoData[demoStep].metrics.reward >= 0 ? 'text-green-500' : 'text-rose-500'}`}>
+                        {demoData[demoStep].metrics.reward.toFixed(1)}
+                      </p>
+                    </div>
+                  </div>
+                </div>
+
+                {/* Right: Code/Console View */}
+                <div className="bg-[#0a0a0a] p-8 flex flex-col gap-6">
+                  <div className="space-y-4">
+                    <p className="text-xs text-white/40 flex items-center gap-2"><Cpu size={14} /> Sandbox Context</p>
+                    <div className="glass p-4 border-white/5 bg-black/60 font-mono text-sm space-y-2">
+                      <p className="text-cyan-400">$ {demoData[demoStep].cmd}</p>
+                      <p className={`text-sm ${demoStep === 1 ? 'text-rose-400' : 'text-green-400/80'}`}>
+                        {demoData[demoStep].output}
+                      </p>
+                    </div>
+                  </div>
+
+                  <div className="flex-1 space-y-4">
+                    <p className="text-xs text-white/40 flex items-center gap-2"><Code2 size={14} /> File: string_utils.py</p>
+                    <div className="glass p-4 border-white/5 bg-black/60 h-full font-mono text-xs text-white/40 leading-relaxed overflow-hidden">
+                      {demoStep < 2 ? (
+                        <pre>
+                          def kebab_to_camel(text):<br />
+                          &nbsp;&nbsp;if not text: return ""<br />
+                          &nbsp;&nbsp;parts = text.split("-")<br />
+                          &nbsp;&nbsp;<span className="bg-rose-500/20 text-rose-300"># BUG: Incorrect join</span><br />
+                          &nbsp;&nbsp;return "".join(p.capitalize() for p in parts)
+                        </pre>
+                      ) : (
+                        <pre>
+                          def kebab_to_camel(text):<br />
+                          &nbsp;&nbsp;if not text: return ""<br />
+                          &nbsp;&nbsp;parts = text.split("-")<br />
+                          &nbsp;&nbsp;<span className="bg-green-500/20 text-green-300"># FIXED: Slicing properly</span><br />
+                          &nbsp;&nbsp;return parts[0] + "".join(p.capitalize() for p in parts[1:])
+                        </pre>
+                      )}
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              {/* Modal Footer */}
+              <div className="p-6 border-t border-white/5 flex justify-between items-center bg-white/2">
+                <div className="flex gap-2">
+                  {demoData.map((_, i) => (
+                    <div key={i} className={`w-8 h-1 rounded-full ${i <= demoStep ? 'bg-purple-500' : 'bg-white/10'}`} />
+                  ))}
+                </div>
+                <div className="flex gap-3">
+                  {demoStep > 0 && (
+                    <button
+                      onClick={() => setDemoStep(prev => prev - 1)}
+                      className="px-4 py-2 text-sm text-white/60 hover:text-white transition-colors"
+                    >
+                      Back
+                    </button>
+                  )}
+                  {demoStep < demoData.length - 1 ? (
+                    <button
+                      onClick={() => setDemoStep(prev => prev + 1)}
+                      className="btn-primary flex items-center gap-2 py-2"
+                    >
+                      Next Step <ChevronRight size={16} />
+                    </button>
+                  ) : (
+                    <button
+                      onClick={() => { setShowDemo(false); setDemoStep(0); }}
+                      className="btn-primary py-2 px-8"
+                    >
+                      Finish Walkthrough
+                    </button>
+                  )}
+                </div>
+              </div>
+            </motion.div>
+          </motion.div>
+        )}
+      </AnimatePresence>
 
       {/* Engineering Process */}
       <section className="bg-surface-color/50 rounded-[40px] py-16 px-8 mb-20">
