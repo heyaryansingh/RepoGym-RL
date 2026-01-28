@@ -1,3 +1,4 @@
+from typing import Optional, Any, Dict, List
 import gymnasium as gym
 from gymnasium import spaces
 import numpy as np
@@ -15,7 +16,11 @@ from repogym.telemetry import EpisodeLogger
 
 class RepoGymEnv(gym.Env):
     """
-    A local-first, containerized reinforcement learning environment for software engineering tasks.
+    A Gymnasium environment for repository-level software engineering tasks.
+    
+    This environment provides a structured interface for agents to interact with
+    a codebase within an isolated Docker sandbox. It supports file operations,
+    command execution, and automated testing with rich reward signals.
     """
     metadata = {"render_modes": ["human"], "render_fps": 4}
 
@@ -204,22 +209,37 @@ class RepoGymEnv(gym.Env):
 
     def _dispatch_action(self, action_str: str) -> ActionWrapper:
         """
-        Parses and validates the action JSON string.
+        Parses and validates a JSON action string.
+        
+        Args:
+            action_str: JSON-encoded action object.
+            
+        Returns:
+            Validated ActionWrapper object.
         """
-        # Pydantic handles the union via ActionWrapper
-        return ActionWrapper.model_validate_json(action_str)
+        data = json.loads(action_str)
+        return ActionWrapper(**data)
 
-    def _get_obs(self):
+    def _get_obs(self) -> Dict[str, str]:
         """
-        Generates the current observation.
+        Constructs the current observation for the agent.
+        
+        Returns:
+            Dict containing the interaction transcript and current working directory.
         """
         return {
             "transcript": self.transcript,
-            "working_directory": "/workspace"
+            "working_directory": "/workspace", # Constant for now
         }
 
-    def _get_info(self):
+    def _get_info(self) -> Dict[str, Any]:
         """
-        Generates auxiliary diagnostic information.
+        Constructs auxiliary information for the agent.
+        
+        Returns:
+            Dict containing metadata about the current state and task.
         """
-        return {}
+        return {
+            "task_id": self.current_task.id if self.current_task else None,
+            "step_count": self.step_count
+        }
