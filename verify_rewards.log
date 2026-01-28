@@ -1,0 +1,15 @@
+Starting rewards verification...
+
+--- Testing Quality Reward (Simple Code) ---
+Reward: 0.1885574946685516, Info: {'exit_code': 0, 'quality_reward': 0.1885574946685516, 'action_valid': True, 'action_type': 'write_file'}
+SUCCESS: Simple code rewarded.
+
+--- Testing Quality Reward (Complex Code) ---
+Reward: 0.0, Info: {'exit_code': 0, 'quality_reward': 0.0, 'action_valid': True, 'action_type': 'write_file'}
+SUCCESS: Complex code rewarded less than simple code.
+
+--- Testing Functional Reward (Test Delta) ---
+Reward: 1.0, Info: {'exit_code': 0, 'test_reward': 1.0, 'action_valid': True, 'action_type': 'run_tests'}
+SUCCESS: Test delta rewarded.
+
+Rewards verification successful!

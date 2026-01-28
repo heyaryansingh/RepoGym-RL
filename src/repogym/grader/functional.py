@@ -32,12 +32,12 @@ def parse_pytest_output(output: str) -> Dict[str, str]:
     results = {}
     lines = output.splitlines()
     for line in lines:
-        if " PASSED " in line:
-            parts = line.split(" PASSED ")
-            test_name = parts[0].strip().split("::")[-1]
-            results[test_name] = "PASS"
-        elif " FAILED " in line:
-            parts = line.split(" FAILED ")
-            test_name = parts[0].strip().split("::")[-1]
-            results[test_name] = "FAIL"
+        if "PASSED" in line:
+            parts = line.split("PASSED")
+            test_id = parts[0].strip().split(":")[-1].strip()
+            results[test_id] = "PASS"
+        elif "FAILED" in line:
+            parts = line.split("FAILED")
+            test_id = parts[0].strip().split(":")[-1].strip()
+            results[test_id] = "FAIL"
     return results
